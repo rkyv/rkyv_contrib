@@ -18,7 +18,7 @@ use std::{hash::Hash, mem::MaybeUninit};
 /// # use rkyv::{AlignedVec, Deserialize, Infallible, archived_root, ser::{Serializer, serializers::AlignedSerializer}};
 /// #[derive(rkyv::Archive, rkyv::Serialize, rkyv::Deserialize, Debug, PartialEq, Eq)]
 /// struct StructWithHashMap {
-///     #[with(rkyv::with::AsHashMap)]
+///     #[with(rkyv_wrappers::as_hashmap::AsHashMap)]
 ///     pub hash_map: Vec<(u32, String)>,
 /// }
 /// let mut serializer = AlignedSerializer::new(AlignedVec::new());
