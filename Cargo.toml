@@ -1,0 +1,5 @@
+[workspace]
+
+members = [
+    "rkyv_wrappers",
+]
