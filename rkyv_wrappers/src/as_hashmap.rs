@@ -5,6 +5,7 @@ use rkyv::{
     Archive, Deserialize, Fallible, Serialize,
 };
 use std::{hash::Hash, mem::MaybeUninit};
+
 /// A wrapper that attempts to convert a vector to and from `ArchivedHashMap`
 ///
 /// rkyv's `ArchivedHashMap` uses a fairly different implementation than `HashMap` in the standard
@@ -35,19 +36,22 @@ use std::{hash::Hash, mem::MaybeUninit};
 /// assert_eq!(deserialized, original);
 /// ```
 pub struct AsHashMap;
+
 impl<K: Archive, V: Archive> ArchiveWith<Vec<(K, V)>> for AsHashMap {
     type Archived = ArchivedHashMap<K::Archived, V::Archived>;
     type Resolver = ArchivedHashMapResolver;
+
     #[inline]
-    fn resolve_with(
+    unsafe fn resolve_with(
         field: &Vec<(K, V)>,
         pos: usize,
         resolver: Self::Resolver,
         out: &mut MaybeUninit<Self::Archived>,
     ) {
-        resolver.resolve_from_len(pos, field.len(), out);
+        ArchivedHashMap::resolve_from_len(field.len(), pos, resolver, out);
     }
 }
+
 impl<
         K: Archive + Serialize<S> + Hash + Eq,
         V: Archive + Serialize<S>,
@@ -56,13 +60,17 @@ impl<
 {
     #[inline]
     fn serialize_with(field: &Vec<(K, V)>, serializer: &mut S) -> Result<Self::Resolver, S::Error> {
-        ArchivedHashMap::serialize_from_iter(
-            field.iter().map(|(x, y)| (x, y)),
-            field.len(),
-            serializer,
-        )
+        // The user must guarantee that the vector contains unique keys
+        unsafe {
+            ArchivedHashMap::serialize_from_iter(
+                field.iter().map(|(x, y)| (x, y)),
+                field.len(),
+                serializer,
+            )
+        }
     }
 }
+
 impl<K: Archive, V: Archive, D: Fallible + ?Sized>
     DeserializeWith<ArchivedHashMap<K::Archived, V::Archived>, Vec<(K, V)>, D> for AsHashMap
 where
