@@ -1,10 +1,10 @@
 use rkyv::{
-    ser::Serializer,
-    std_impl::chd::{ArchivedHashMap, ArchivedHashMapResolver},
+    ser::{ScratchSpace, Serializer},
+    collections::hash_map::{ArchivedHashMap, HashMapResolver},
     with::{ArchiveWith, DeserializeWith, SerializeWith},
     Archive, Deserialize, Fallible, Serialize,
 };
-use std::{hash::Hash, mem::MaybeUninit};
+use std::hash::Hash;
 
 /// A wrapper that attempts to convert a vector to and from `ArchivedHashMap`
 ///
@@ -16,18 +16,24 @@ use std::{hash::Hash, mem::MaybeUninit};
 /// Example:
 ///
 /// ```rust
-/// # use rkyv::{AlignedVec, Deserialize, Infallible, archived_root, ser::{Serializer, serializers::AlignedSerializer}};
+/// use rkyv::{
+///     archived_root,
+///     ser::{Serializer, serializers::AllocSerializer},
+///     AlignedVec,
+///     Deserialize,
+///     Infallible,
+/// };
 /// #[derive(rkyv::Archive, rkyv::Serialize, rkyv::Deserialize, Debug, PartialEq, Eq)]
 /// struct StructWithHashMap {
 ///     #[with(rkyv_wrappers::as_hashmap::AsHashMap)]
 ///     pub hash_map: Vec<(u32, String)>,
 /// }
-/// let mut serializer = AlignedSerializer::new(AlignedVec::new());
+/// let mut serializer = AllocSerializer::<4096>::default();
 /// let original = StructWithHashMap {
 ///     hash_map: vec![(1, String::from("a")), (2, String::from("b"))]
 /// };
 /// serializer.serialize_value(&original).unwrap();
-/// let buffer = serializer.into_inner();
+/// let buffer = serializer.into_serializer().into_inner();
 /// let output = unsafe {
 ///     archived_root::<StructWithHashMap>(&buffer)
 /// };
@@ -39,14 +45,14 @@ pub struct AsHashMap;
 
 impl<K: Archive, V: Archive> ArchiveWith<Vec<(K, V)>> for AsHashMap {
     type Archived = ArchivedHashMap<K::Archived, V::Archived>;
-    type Resolver = ArchivedHashMapResolver;
+    type Resolver = HashMapResolver;
 
     #[inline]
     unsafe fn resolve_with(
         field: &Vec<(K, V)>,
         pos: usize,
         resolver: Self::Resolver,
-        out: &mut MaybeUninit<Self::Archived>,
+        out: *mut Self::Archived,
     ) {
         ArchivedHashMap::resolve_from_len(field.len(), pos, resolver, out);
     }
@@ -55,7 +61,7 @@ impl<K: Archive, V: Archive> ArchiveWith<Vec<(K, V)>> for AsHashMap {
 impl<
         K: Archive + Serialize<S> + Hash + Eq,
         V: Archive + Serialize<S>,
-        S: Serializer + Fallible + ?Sized,
+        S: ScratchSpace + Serializer + Fallible + ?Sized,
     > SerializeWith<Vec<(K, V)>, S> for AsHashMap
 {
     #[inline]
@@ -64,7 +70,6 @@ impl<
         unsafe {
             ArchivedHashMap::serialize_from_iter(
                 field.iter().map(|(x, y)| (x, y)),
-                field.len(),
                 serializer,
             )
         }
