@@ -1,3 +1,5 @@
+//! A wrapper that converts a `Vec` to an `ArchivedHashMap` at serialization time.
+
 use rkyv::{
     ser::{ScratchSpace, Serializer},
     collections::hash_map::{ArchivedHashMap, HashMapResolver},

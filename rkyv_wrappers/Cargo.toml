@@ -8,3 +8,7 @@ edition = "2018"
 
 [dependencies]
 rkyv = "0.7"
+
+[features]
+default = []
+validation = ["rkyv/validation"]
