@@ -50,7 +50,11 @@ pub struct BitVecWrapper;
 // We also have to store the bit length.
 // This is because when calling `as_raw_slice` we will get unwanted bits if the `BitVec` bit length is not a multiple of the bit size of T.
 #[cfg_attr(feature = "validation", derive(bytecheck::CheckBytes))]
-pub struct ArchivedBitVec<T: BitStore + Archive, O: BitOrder> {
+pub struct ArchivedBitVec<T = Archived<usize>, O = Lsb0>
+where
+    T: BitStore + Archive,
+    O: BitOrder,
+{
     inner: ArchivedVec<Archived<T>>,
     bit_len: Archived<usize>,
     _or: PhantomData<O>,
