@@ -8,7 +8,9 @@ edition = "2018"
 
 [dependencies]
 rkyv = "0.7"
+bitvec = { version = "1.0.1", optional = true }
+bytecheck = { version = "~0.6.8", optional = true, default-features = false }
 
 [features]
 default = []
-validation = ["rkyv/validation"]
+validation = ["rkyv/validation", "bytecheck"]

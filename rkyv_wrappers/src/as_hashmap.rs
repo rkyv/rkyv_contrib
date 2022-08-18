@@ -1,8 +1,8 @@
 //! A wrapper that converts a `Vec` to an `ArchivedHashMap` at serialization time.
 
 use rkyv::{
-    ser::{ScratchSpace, Serializer},
     collections::hash_map::{ArchivedHashMap, HashMapResolver},
+    ser::{ScratchSpace, Serializer},
     with::{ArchiveWith, DeserializeWith, SerializeWith},
     Archive, Deserialize, Fallible, Serialize,
 };
@@ -70,10 +70,7 @@ impl<
     fn serialize_with(field: &Vec<(K, V)>, serializer: &mut S) -> Result<Self::Resolver, S::Error> {
         // The user must guarantee that the vector contains unique keys
         unsafe {
-            ArchivedHashMap::serialize_from_iter(
-                field.iter().map(|(x, y)| (x, y)),
-                serializer,
-            )
+            ArchivedHashMap::serialize_from_iter(field.iter().map(|(x, y)| (x, y)), serializer)
         }
     }
 }

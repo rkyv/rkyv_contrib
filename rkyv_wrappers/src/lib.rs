@@ -7,5 +7,8 @@
 pub mod as_hashmap;
 pub mod custom_phantom;
 
+#[cfg(feature = "bitvec")]
+pub mod bitvec;
+
 #[cfg(test)]
 pub mod tests;
